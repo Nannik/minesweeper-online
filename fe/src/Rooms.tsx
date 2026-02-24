@@ -10,7 +10,7 @@ type Room = {
 export const Rooms = () => {
   const [rooms, setRooms] = useState<Room[]>([])
   const [currentRoom, setCurrentRoom] = useState<number | null>(null)
-  const [player, setPlayer] = useState('')
+  const [player, setPlayer] = useState(localStorage.getItem('player'))
 
   useEffect(() => {
     let ws = new WebSocket(`http://localhost:8000/ws`);
@@ -37,7 +37,11 @@ export const Rooms = () => {
 
       <input 
         disabled={currentRoom != null}
-        type='text' onChange={(e) => setPlayer(e.target.value)} 
+        value={player}
+        type='text' onChange={(e) => {
+          setPlayer(e.target.value)
+          localStorage.setItem('player', e.target.value)
+        }} 
       />
 
       <button

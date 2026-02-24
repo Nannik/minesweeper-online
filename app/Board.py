@@ -64,6 +64,12 @@ class Board:
                 if (self._board[y][x] != PublicBoardSpecialCell.MINE):
                     self._board[y][x] += 1
 
+    def _reveal_mines(self):
+        for y in range(self._size_y):
+            for x in range(self._size_x):
+                if self._board[y][x] == PublicBoardSpecialCell.MINE:
+                    self._board_mask[y][x] = BoardMask.VISIBLE
+
     def reveal(self, x, y):
         def reveal_recursivelly(x, y, ignore_value=False):
             if x < 0 or x >= self._size_x:
@@ -82,6 +88,7 @@ class Board:
 
             if self._board[y][x] == PublicBoardSpecialCell.MINE:
                 self.is_game_over = True
+                self._reveal_mines()
 
             if self._board[y][x] == 0 or ignore_value:
                 reveal_recursivelly(x - 1, y - 1)
@@ -132,3 +139,6 @@ class Board:
                 for x in range(self._size_x)
             ] for y in range(self._size_y)
         ]
+
+    def _get_neighbours(self, x, y):
+        yield self._board[y][x]

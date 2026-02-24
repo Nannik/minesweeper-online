@@ -27,6 +27,7 @@ export const Board = (props: BoardProps) => {
   }, [room, player])
 
   useEffect(() => {
+    console.log(import.meta.env.VITE_API_HOST + ':' + import.meta.env.VITE_API_PORT)
     let ws = new WebSocket(`http://localhost:8000/ws/${room}?player=${player}`);
 
     ws.onmessage = (e) => {

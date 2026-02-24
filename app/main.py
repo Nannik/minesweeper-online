@@ -1,5 +1,7 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from app.SiteWSController import SiteWSController
 from app.RoomWSController import RoomWSController
@@ -34,3 +36,7 @@ async def roomWS(room_id, websocket: WebSocket):
 async def create_room():
     id = await roomController.create_room()
     return id
+
+BASE_DIR = Path(__file__).resolve().parent
+frontend_path = (BASE_DIR / "../fe/dist").resolve()
+app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
