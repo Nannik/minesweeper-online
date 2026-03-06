@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface BoardProps {
   room: number
@@ -18,6 +18,7 @@ export const Board = (props: BoardProps) => {
     onClose
   } = props;
 
+  const ref = useRef(null)
   const [ws, setWs] = useState<WebSocket | null>(null)
   const [board, setBoard] = useState<[][]>([])
   const [isGameOver, setIsGameOver] = useState(false)
@@ -28,7 +29,7 @@ export const Board = (props: BoardProps) => {
 
   useEffect(() => {
     console.log(import.meta.env.VITE_API_HOST + ':' + import.meta.env.VITE_API_PORT)
-    let ws = new WebSocket(`http://localhost:8000/ws/${room}?player=${player}`);
+    let ws = new WebSocket(`/ws/${room}?player=${player}`);
 
     ws.onmessage = (e) => {
       let data = JSON.parse(e.data);
@@ -66,6 +67,13 @@ export const Board = (props: BoardProps) => {
     }
   }
 
+  let cellSize = 0;
+  if (ref.current && board.length > 0) {
+    let cellWidth = (ref.current.offsetWidth) / board[0].length - 2
+    let cellHeight = (window.innerHeight * 2.8) / board.length
+    cellSize = Math.min(cellHeight, cellWidth)
+  }
+
   return (
     <div>
       Playing on {room}
@@ -76,7 +84,8 @@ export const Board = (props: BoardProps) => {
           Game Over
         </div>
       )}
-      <div 
+      <div
+        ref={ref}
         className="grid"
         onContextMenu={(e) => e.preventDefault()}
       >
@@ -84,6 +93,11 @@ export const Board = (props: BoardProps) => {
           <div className="row">
             {row.map((cell, x) => (
               <div 
+                style={{
+                  width: cellSize + 'px',
+                  height: cellSize + 'px',
+                  lineHeight: cellSize + 'px'
+                }}
                 className={`
                   cell 
                   ${cell >= 0 && 'revealed'}

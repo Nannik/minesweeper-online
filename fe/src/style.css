@@ -4,6 +4,7 @@
   flex-direction: column;
   gap: 2px;
   margin: 20px;
+  width: calc(100% - 40px);
 }
 
 .row {
@@ -14,9 +15,7 @@
 
 .cell {
   background: #ccc;
-  width: 30px;
-  height: 30px;
-  line-height: 40px;
+  aspect-ratio: 1/1;
   cursor: pointer;
   text-align: center;
   border-radius: 2px;
@@ -35,8 +34,8 @@
 .mine::before {
   content: '';
   background: #000000;
-  width: 20px;
-  height: 20px;
+  width: 50%;
+  height: 50%;
   border-radius: 50%;
 }
 
@@ -49,7 +48,7 @@
 .flag::before {
   content: '';
   background: #ff00ff;
-  width: 20px;
-  height: 20px;
+  width: 50%;
+  height: 50%;
   border-radius: 50%;
 }

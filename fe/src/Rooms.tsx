@@ -13,7 +13,7 @@ export const Rooms = () => {
   const [player, setPlayer] = useState(localStorage.getItem('player'))
 
   useEffect(() => {
-    let ws = new WebSocket(`http://localhost:8000/ws`);
+    let ws = new WebSocket(`/ws`);
 
     ws.onmessage = (e) => {
       setRooms(JSON.parse(e.data))
@@ -21,8 +21,12 @@ export const Rooms = () => {
   }, [])
 
   const createRoom = async () => {
-    const res = await api.get<number>('/create_room')
-    setCurrentRoom(res.data)
+    try {
+      const res = await api.get<number>('/create_room')
+      setCurrentRoom(res.data)
+    } catch (e) {
+      alert(JSON.stringify(e))
+    }
   }
 
   return (
