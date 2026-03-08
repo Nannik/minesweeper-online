@@ -14,14 +14,19 @@ class Socket:
 
 class Room:
     id: int
+    size: int
+    mines_count: int
     sockets: list[Socket] = []
     board: Board
 
-    def __init__(self, id, size, mines):
+    def __init__(self, id, size, mines_count):
         self.id = id
-        self.board = Board(size, size, mines)
+        self.size = size
+        self.mines_count = mines_count
+        self.board = Board(size, size, mines_count)
 
     async def send(self):
+        print(self.sockets)
         for socket in self.sockets:
             await socket.socket.send_json({
                 "type": "GameOver" if self.board.is_game_over else "Update",
@@ -42,18 +47,28 @@ class Room:
                 except JSONDecodeError:
                     continue
 
+                if not 'type' in json:
+                    continue
+
+                if json['type'] == 'RESTART':
+                    self.board = Board(
+                    self.size,
+                    self.size,
+                    self.mines_count
+                )
+
                 if (
                     ('x' in json) and
                     ('y' in json) and
-                    ('type' in json) and
                     isinstance(json['x'], int) and
                     isinstance(json['y'], int)
                 ):
-                    if (json['type'] == 'FLAG'):
+                    if json['type'] == 'FLAG':
                         self.board.flag(json['x'], json['y'])
                     else:
                         self.board.reveal(json['x'], json['y'])
-                    await self.send()
+
+                await self.send()
 
         except WebSocketDisconnect as e:
             self.sockets.remove(current_socket)

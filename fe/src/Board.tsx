@@ -34,6 +34,8 @@ export const Board = (props: BoardProps) => {
       let data = JSON.parse(e.data);
       if (data.type && data.type == "GameOver") {
         setIsGameOver(true)
+      } else {
+        setIsGameOver(false)
       }
 
       if (data && data.board) {
@@ -54,6 +56,12 @@ export const Board = (props: BoardProps) => {
   const handleClose = () => {
     ws.close()
     onClose()
+  }
+
+  const handleRestart = () => {
+    ws.send(JSON.stringify({
+      type: 'RESTART'
+    }))
   }
 
   const send = (e, x, y) => {
@@ -93,7 +101,7 @@ export const Board = (props: BoardProps) => {
           >
             Game Over
             <div className="w-full">
-              <button onClick={handleClose}>Try again</button>
+              <button onClick={handleRestart}>Try again</button>
             </div>
           </div>
         )}
