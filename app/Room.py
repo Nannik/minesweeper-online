@@ -26,7 +26,6 @@ class Room:
         self.board = Board(size, size, mines_count)
 
     async def send(self):
-        print(self.sockets)
         for socket in self.sockets:
             await socket.socket.send_json({
                 "type": "GameOver" if self.board.is_game_over else "Update",
@@ -44,6 +43,7 @@ class Room:
             while True:
                 try:
                     json = await websocket.receive_json()
+
                 except JSONDecodeError:
                     continue
 
@@ -52,10 +52,10 @@ class Room:
 
                 if json['type'] == 'RESTART':
                     self.board = Board(
-                    self.size,
-                    self.size,
-                    self.mines_count
-                )
+                        self.size,
+                        self.size,
+                        self.mines_count
+                    )
 
                 if (
                     ('x' in json) and

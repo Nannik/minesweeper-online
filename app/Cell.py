@@ -26,7 +26,7 @@ class Cell:
         return self.value == MINE
 
     def reveal(self):
-        self.is_hidden = False
+        self._state = CellState.VISIBLE
         if self.is_mine():
             raise RevealMineException()
 

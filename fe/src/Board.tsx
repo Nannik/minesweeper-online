@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
+const MINE = -1
+const FLAG = -2
+const HIDDEN = -3
+
 interface BoardProps {
   room: number
   player: string
@@ -116,9 +120,9 @@ export const Board = (props: BoardProps) => {
                 }}
                 className={`
                   cell 
-                  ${cell >= 0 && 'revealed'}
-                  ${cell == -1 && 'mine'}
-                  ${cell == -3 && 'flag'}
+                  ${cell != HIDDEN && cell != FLAG && 'revealed'}
+                  ${cell == MINE && 'mine'}
+                  ${cell == FLAG && 'flag'}
                 `}
                 onMouseDown={(e) => send(e, x, y)}
               >

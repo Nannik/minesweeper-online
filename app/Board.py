@@ -1,4 +1,4 @@
-from app.Cell import Cell, MINE, FLAG, RevealMineException
+from app.Cell import Cell, MINE, RevealMineException
 import random
 
 
@@ -34,7 +34,7 @@ class Board:
             y = int(pos / self._size_x)
             x = pos % self._size_y
             if (
-                self._board[y][x].is_mine() and
+                not self._board[y][x].is_mine() and
                 (exclude_x != x and exclude_y != y)
             ):
                 i += 1
@@ -59,49 +59,51 @@ class Board:
         yield (nx, ny)
 
     def _increment_neighbors(self, x, y):
-        for (nx, ny) in self._get_neighbors(x, y):
-            if (self._board[ny][nx].is_mine()):
+        for (nx, ny) in self._get_neighbors_coord(x, y):
+            if (not self._board[ny][nx].is_mine()):
                 self._board[ny][nx].value += 1
 
     def _reveal_mines(self):
         for y in range(self._size_y):
             for x in range(self._size_x):
                 if self._board[y][x].is_mine():
-                    self._board[y][x].reveal()
+                    try:
+                        self._board[y][x].reveal()
+                    except RevealMineException:
+                        pass
 
     def reveal(self, x, y):
-        def reveal_recursivelly(x, y, disable_recursion_check=False):
+        def reveal_recursivelly(x, y, is_target_cell=False):
             if x < 0 or x >= self._size_x:
                 return
             if y < 0 or y >= self._size_y:
                 return
             if self._board[y][x].is_flagged():
                 return
-            
-            neighbor_flags_count = 0
-            for (x, y) in self._get_neighbors_coord(x, y):
-                if self._board[y][x].is_flagged():
-                    neighbor_flags_count += 1
 
-            can_reveal_neighbors = (
-                self._board[y][x].is_visible() and
-                neighbor_flags_count == self._board[y][x].value
-            )
-
-            print(can_reveal_neighbors)
-            if not can_reveal_neighbors:
-                return
-
-            if not disable_recursion_check and self._board[y][x].is_visible():
-                return
-
+            was_visible = self._board[y][x].is_visible()
             try:
                 self._board[y][x].reveal()
             except RevealMineException:
                 self.is_game_over = True
                 self._reveal_mines()
 
-            if self._board[y][x] == 0:
+            neighbor_flags_count = 0
+            for (nx, ny) in self._get_neighbors_coord(x, y):
+                if self._board[ny][nx].is_flagged():
+                    neighbor_flags_count += 1
+
+            if (
+                (
+                    was_visible and
+                    is_target_cell and
+                    neighbor_flags_count == self._board[y][x].value
+                ) or
+                (
+                    not was_visible and
+                    self._board[y][x].value == 0
+                )
+            ):
                 for (nx, ny) in self._get_neighbors_coord(x, y):
                     reveal_recursivelly(nx, ny)
 

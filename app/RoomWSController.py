@@ -33,7 +33,7 @@ class RoomWSController:
     async def create_room(self):
         id = math.floor(random() * 1000)
         try:
-            room = Room(id, 15, 50)
+            room = Room(id, 15, 10)
         except GameException:
             return
 
