@@ -1,4 +1,4 @@
-from enum import IntEnum
+from app.Cell import Cell, MINE, FLAG, RevealMineException
 import random
 
 
@@ -6,21 +6,8 @@ class GameException(Exception):
     pass
 
 
-class BoardMask(IntEnum):
-    HIDDEN = 0
-    VISIBLE = 1
-    FLAG = 2
-
-
-class PublicBoardSpecialCell(IntEnum):
-    MINE = -1
-    HIDDEN = -2
-    FLAG = -3
-
-
 class Board:
-    _board = None
-    _board_mask = None
+    _board: list[list[Cell]] = None
     _size_x = None
     _size_y = None
     _mines_count = None
@@ -36,11 +23,7 @@ class Board:
             raise GameException('too many mines')
 
         self._board = [
-            [0 for j in range(size_x)]
-            for i in range(size_y)
-        ]
-        self._board_mask = [
-            [BoardMask.HIDDEN for j in range(size_x)]
+            [Cell() for j in range(size_x)]
             for i in range(size_y)
         ]
 
@@ -51,65 +34,82 @@ class Board:
             y = int(pos / self._size_x)
             x = pos % self._size_y
             if (
-                self._board[y][x] != PublicBoardSpecialCell.MINE and
+                self._board[y][x].is_mine() and
                 (exclude_x != x and exclude_y != y)
             ):
                 i += 1
-                self._board[y][x] = PublicBoardSpecialCell.MINE
+                self._board[y][x].value = MINE
                 self._increment_neighbors(x, y)
 
-    def _increment_neighbors(self, cell_x, cell_y):
-        for y in range(max(0, cell_y - 1), min(self._size_y, cell_y + 2)):
-            for x in range(max(0, cell_x - 1), min(self._size_x, cell_x + 2)):
-                if (self._board[y][x] != PublicBoardSpecialCell.MINE):
-                    self._board[y][x] += 1
+    def _get_neighbors_coord(self, x, y):
+        px = max(0, min(self._size_x - 1, x - 1))
+        nx = max(0, min(self._size_x - 1, x + 1))
+        py = max(0, min(self._size_y - 1, y - 1))
+        ny = max(0, min(self._size_y - 1, y + 1))
+
+        yield (px, py)
+        yield (x, py)
+        yield (nx, py)
+
+        yield (px, y)
+        yield (nx, y)
+
+        yield (px, ny)
+        yield (x, ny)
+        yield (nx, ny)
+
+    def _increment_neighbors(self, x, y):
+        for (nx, ny) in self._get_neighbors(x, y):
+            if (self._board[ny][nx].is_mine()):
+                self._board[ny][nx].value += 1
 
     def _reveal_mines(self):
         for y in range(self._size_y):
             for x in range(self._size_x):
-                if self._board[y][x] == PublicBoardSpecialCell.MINE:
-                    self._board_mask[y][x] = BoardMask.VISIBLE
+                if self._board[y][x].is_mine():
+                    self._board[y][x].reveal()
 
     def reveal(self, x, y):
-        def reveal_recursivelly(x, y, ignore_value=False):
+        def reveal_recursivelly(x, y, disable_recursion_check=False):
             if x < 0 or x >= self._size_x:
                 return
             if y < 0 or y >= self._size_y:
                 return
-            if (self._board_mask[y][x] == BoardMask.FLAG):
+            if self._board[y][x].is_flagged():
                 return
-            if (
-                (self._board_mask[y][x] == BoardMask.VISIBLE) and
-                (not ignore_value)
-            ):
+            
+            neighbor_flags_count = 0
+            for (x, y) in self._get_neighbors_coord(x, y):
+                if self._board[y][x].is_flagged():
+                    neighbor_flags_count += 1
+
+            can_reveal_neighbors = (
+                self._board[y][x].is_visible() and
+                neighbor_flags_count == self._board[y][x].value
+            )
+
+            print(can_reveal_neighbors)
+            if not can_reveal_neighbors:
                 return
 
-            self._board_mask[y][x] = BoardMask.VISIBLE
+            if not disable_recursion_check and self._board[y][x].is_visible():
+                return
 
-            if self._board[y][x] == PublicBoardSpecialCell.MINE:
+            try:
+                self._board[y][x].reveal()
+            except RevealMineException:
                 self.is_game_over = True
                 self._reveal_mines()
 
-            if self._board[y][x] == 0 or ignore_value:
-                reveal_recursivelly(x - 1, y - 1)
-                reveal_recursivelly(x, y - 1)
-                reveal_recursivelly(x + 1, y - 1)
-
-                reveal_recursivelly(x - 1, y)
-                reveal_recursivelly(x + 1, y)
-
-                reveal_recursivelly(x - 1, y + 1)
-                reveal_recursivelly(x, y + 1)
-                reveal_recursivelly(x + 1, y + 1)
+            if self._board[y][x] == 0:
+                for (nx, ny) in self._get_neighbors_coord(x, y):
+                    reveal_recursivelly(nx, ny)
 
         if not self._is_generated:
             self._fill_mines(self._mines_count, x, y)
             self._is_generated = True
 
-        if self._board_mask[y][x] == BoardMask.HIDDEN:
-            reveal_recursivelly(x, y)
-        elif self._board_mask[y][x] == BoardMask.VISIBLE:
-            reveal_recursivelly(x, y, True)
+        reveal_recursivelly(x, y, True)
 
     def flag(self, x, y):
         if x < 0 or x >= self._size_x:
@@ -117,28 +117,12 @@ class Board:
         if y < 0 or y >= self._size_y:
             return
 
-        if self._board_mask[y][x] == BoardMask.VISIBLE:
-            return
-
-        if self._board_mask[y][x] == BoardMask.HIDDEN:
-            self._board_mask[y][x] = BoardMask.FLAG
-        else:
-            self._board_mask[y][x] = BoardMask.HIDDEN
+        self._board[y][x].toggle_flag()
 
     def get(self):
-        def map(x, y):
-            if self._board_mask[y][x] == BoardMask.HIDDEN:
-                return PublicBoardSpecialCell.HIDDEN
-            if self._board_mask[y][x] == BoardMask.FLAG:
-                return PublicBoardSpecialCell.FLAG
-            if self._board_mask[y][x] == BoardMask.VISIBLE:
-                return self._board[y][x]
         return [
             [
-                map(x, y)
+                self._board[y][x].get_public_value()
                 for x in range(self._size_x)
             ] for y in range(self._size_y)
         ]
-
-    def _get_neighbours(self, x, y):
-        yield self._board[y][x]

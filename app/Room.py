@@ -47,7 +47,7 @@ class Room:
                 except JSONDecodeError:
                     continue
 
-                if not 'type' in json:
+                if 'type' not in json:
                     continue
 
                 if json['type'] == 'RESTART':
