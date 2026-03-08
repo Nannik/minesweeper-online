@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react"
 import { api } from "./api"
 import { Board } from "./Board"
+import { Form } from "./Form"
 
-type Room = {
+export type Room = {
   id: number,
   players_count: number
 }
@@ -37,36 +38,18 @@ export const Rooms = () => {
           player={player}
           onClose={() => setCurrentRoom(null)}
         />
-      ) : null}
-
-      <input 
-        disabled={currentRoom != null}
-        value={player}
-        type='text' onChange={(e) => {
-          setPlayer(e.target.value)
-          localStorage.setItem('player', e.target.value)
-        }} 
-      />
-
-      <button
-        disabled={player == ''}
-        onClick={createRoom}
-      >
-        Create room
-      </button>
-      <ul>
-        {rooms.map(room => (
-          <li>
-            <span>{room.id}: Players: {room.players_count}</span>
-            <button
-              disabled={player == ''}
-              onClick={() => setCurrentRoom(room.id)}
-            >
-              Connect
-            </button>
-          </li>
-        ))}
-      </ul>
+      ) : (
+        <Form 
+          rooms={rooms}
+          player={player}
+          onPlayerChange={(player) => {
+            setPlayer(player)
+            localStorage.setItem('player', player)
+          }}
+          createRoom={createRoom}
+          setCurrentRoom={setCurrentRoom}
+        />
+      )}
     </div>
   )
 }

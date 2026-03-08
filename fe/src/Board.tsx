@@ -28,7 +28,6 @@ export const Board = (props: BoardProps) => {
   }, [room, player])
 
   useEffect(() => {
-    console.log(import.meta.env.VITE_API_HOST + ':' + import.meta.env.VITE_API_PORT)
     let ws = new WebSocket(`/ws/${room}?player=${player}`);
 
     ws.onmessage = (e) => {
@@ -68,27 +67,36 @@ export const Board = (props: BoardProps) => {
   }
 
   let cellSize = 0;
+  let wrapperWidth: number | string = '100%';
   if (ref.current && board.length > 0) {
     let cellWidth = (ref.current.offsetWidth) / board[0].length - 2
-    let cellHeight = (window.innerHeight * 2.8) / board.length
+    let cellHeight = (window.innerHeight - 150) / board.length
     cellSize = Math.min(cellHeight, cellWidth)
+    wrapperWidth = ((cellSize + 2) * board[0].length)
   }
 
   return (
-    <div>
-      Playing on {room}
-      <button onClick={handleClose}>Disconnect</button>
-
-      {isGameOver && (
-        <div>
-          Game Over
-        </div>
-      )}
+    <div
+      className="grid-wrapper"
+      style={{
+        width: wrapperWidth
+      }}
+    >
       <div
         ref={ref}
         className="grid"
         onContextMenu={(e) => e.preventDefault()}
       >
+        {isGameOver && (
+          <div
+            className="board-overlay"
+          >
+            Game Over
+            <div className="w-full">
+              <button onClick={handleClose}>Try again</button>
+            </div>
+          </div>
+        )}
         {board.map((row, y) => (
           <div className="row">
             {row.map((cell, x) => (
@@ -111,6 +119,10 @@ export const Board = (props: BoardProps) => {
             ))}
           </div>
         ))}
+      </div>
+
+      <div className="w-full">
+        <button onClick={handleClose}>Disconnect</button>
       </div>
     </div>
   )
